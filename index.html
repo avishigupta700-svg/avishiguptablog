@@ -69,6 +69,9 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px; }
   .serif, h1, h2, h3, .name { font-family: "Instrument Serif", "Iowan Old Style", Georgia, serif; font-weight: 400; }
   .wrap { width: min(1120px, 100% - 2.5rem); margin-inline: auto; }
+  @media (min-width: 1600px) {
+    .wrap { width: min(1320px, 100% - 4rem); }
+  }
 
   /* Reading progress */
   #progress {
@@ -138,7 +141,10 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   .empty { padding: 2.2rem 1.75rem 2.2rem calc(var(--datecol) + 1.75rem); color: var(--muted); border-bottom: 1px solid var(--rule); }
 
   /* Reader */
-  .post { width: min(42rem, 100% - 2.5rem); margin: 0 auto; padding: 2.25rem 0 1rem; }
+  .post { width: min(48rem, 100% - 2.5rem); margin: 0 auto; padding: 2.25rem 0 1rem; }
+  @media (min-width: 1600px) {
+    .post { width: min(56rem, 100% - 4rem); }
+  }
   .back { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); text-decoration: none; font-size: .95rem; padding: .3rem 0; }
   .back:hover { color: var(--ink); }
   .back svg { width: 1rem; height: 1rem; }
@@ -159,10 +165,11 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   .prose blockquote { margin: 2rem 0; padding: .2rem 0 .2rem 1.5rem; border-left: 4px double var(--red); font-family: "Instrument Serif", Georgia, serif; font-size: 1.7rem; line-height: 1.3; }
   .prose .note { font-size: .95rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2.2rem; }
   .formula { margin: 1.8rem 0; padding: 1.2rem 1rem; text-align: center; font-family: "Instrument Serif", Georgia, serif; font-size: 1.55rem; line-height: 1.3; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); overflow-x: auto; }
-  .table-wrap { overflow-x: auto; margin: 1.6rem 0 1.8rem; }
+  .table-wrap { overflow-x: auto; overflow-y: auto; max-height: 26rem; margin: 1.6rem 0 1.8rem; border: 1px solid var(--rule); border-radius: 4px; }
   table { width: 100%; min-width: 30rem; border-collapse: collapse; font-size: .97rem; line-height: 1.45; }
-  th { text-align: left; font-weight: 600; padding: .6rem .8rem .6rem 0; border-bottom: 1px solid var(--ink); vertical-align: bottom; }
+  th { position: sticky; top: 0; background: var(--sheet); text-align: left; font-weight: 600; padding: .6rem .8rem .6rem 0; border-bottom: 1px solid var(--ink); vertical-align: bottom; }
   td { padding: .7rem .8rem .7rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .table-wrap th:first-child, .table-wrap td:first-child { padding-left: .8rem; }
   th.num, td.num { text-align: right; padding-right: 0; padding-left: .8rem; white-space: nowrap; }
   tr.total td { font-weight: 600; border-bottom: 0; }
   tr.total td.num span { display: inline-block; border-bottom: 4px double var(--ink); padding-bottom: .1rem; }
@@ -181,14 +188,14 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   @media (max-width: 860px) {
     .about { grid-template-columns: 1fr; }
   }
-  @media (max-width: 1000px) and (min-width: 761px) {
+  @media (max-width: 1024px) and (min-width: 761px) {
     .sheet { --datecol: 6.5rem; }
     .entry { grid-template-columns: var(--datecol) minmax(0, 1fr) 8.5rem 4.25rem; }
     .c-topic { font-size: .8rem; padding-left: .6rem; padding-right: .6rem; }
     .c-topic .g { display: none; }
     .c-read { padding-left: .6rem; padding-right: .6rem; }
   }
-  @media (max-width: 600px) {
+  @media (max-width: 900px) {
     .main-nav a { padding: .5rem 0; }
     .f { padding: .9rem 0; }
     .theme { width: 2.5rem; height: 2.5rem; }
@@ -214,6 +221,12 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     html { scroll-behavior: auto; }
+  }
+  @media (max-width: 360px) {
+    .hero h1 { font-size: 2.15rem; }
+    .post h1 { font-size: 1.95rem; }
+    .prose blockquote { font-size: 1.2rem; padding-left: 1.1rem; }
+    .dek { font-size: 1.1rem; }
   }
 </style>
 </head>
@@ -500,7 +513,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   <strong>Where does the packaging company sit in the supply chain relative to my company?</strong>
 </blockquote>
 
-<table>
+<div class="table-wrap"><table>
   <thead>
     <tr>
       <th>Situation</th>
@@ -525,7 +538,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
       <td><strong>Backward Integration</strong></td>
     </tr>
   </tbody>
-</table>
+</table></div>
 
 <p>
   So, <strong>the nature of the activity alone does not determine the type of integration</strong>.
@@ -534,7 +547,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
 
 <h2>Backward vs Forward Integration</h2>
 
-<table>
+<div class="table-wrap"><table>
   <thead>
     <tr>
       <th>Basis</th>
@@ -579,7 +592,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
       <td>Later stage than the company</td>
     </tr>
   </tbody>
-</table>
+</table></div>
 
 <h2>A Quick Example</h2>
 
@@ -900,7 +913,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     
     <p><strong>Introduction → Growth → Maturity → Decline</strong></p>
     
-    <table>
+    <div class="table-wrap"><table>
     <thead>
     <tr>
     <th>Stage</th>
@@ -940,7 +953,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     <td>Demand reduces</td>
     </tr>
     </tbody>
-    </table>
+    </table></div>
     
     <p>The important point is that <strong>sales and market conditions change as the product moves through its life cycle.</strong></p>
     
@@ -1269,7 +1282,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     
     <p>Imagine the following:</p>
     
-    <table>
+    <div class="table-wrap"><table>
     <thead>
     <tr>
     <th>Period</th>
@@ -1309,7 +1322,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     <td>🐕 Dog</td>
     </tr>
     </tbody>
-    </table>
+    </table></div>
     
     <p>This illustrates the <strong>possible evolution</strong> of a product.</p>
     
@@ -1345,7 +1358,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     
     <p>Imagine a company with four products:</p>
     
-    <table>
+    <div class="table-wrap"><table>
     <thead>
     <tr>
     <th>Product</th>
@@ -1380,7 +1393,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     <td>Consider exit/harvest</td>
     </tr>
     </tbody>
-    </table>
+    </table></div>
     
     <p>The <strong>Cash Cow</strong> can generate cash.</p>
     
