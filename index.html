@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>CA Avishi Gupta | Strategy, Tax and Finance</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 try { var t = localStorage.getItem('theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -249,6 +250,14 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     .prose blockquote { font-size: 1.2rem; padding-left: 1.1rem; }
     .dek { font-size: 1.1rem; }
   }
+.sheet.res .entry { grid-template-columns: var(--datecol) minmax(0, 1fr) 11rem 11.5rem; }
+.authbar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; padding: .8rem 0; margin-left: auto; font-size: .95rem; color: var(--muted); }
+.authbar button, .dl { font: inherit; font-size: .9rem; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 3px; padding: .4rem .9rem; cursor: pointer; transition: background .15s, color .15s; }
+.authbar button:hover, .dl:hover { background: var(--ink); color: var(--paper); }
+.dl[disabled] { opacity: .6; cursor: wait; }
+.c-read.res-act { text-align: right; }
+.res-msg { padding: 1rem 1.75rem; color: var(--red); font-size: .95rem; }
+@media (max-width: 760px) { .sheet.res .entry { display: flex; } }
 </style>
 </head>
 <body>
@@ -266,6 +275,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
       <a href="#/">Blog</a>
       <a href="#/topics">Topics</a>
       <a href="#/about">About</a>
+      <a href="#/resources">Free Resources</a>
       <a href="https://youtube.com/@avishigupta888?si=FCFOyoQ0msLmCbXU" target="_blank" rel="noopener">YouTube</a>
       <a href="https://rzp.io/rzp/HJp7Yodi" target="_blank" rel="noopener">WebStore</a>
       <button class="theme" id="theme" type="button" aria-label="Switch colour theme"></button>
@@ -316,7 +326,22 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
 
   <!-- READER -->
   <main id="reader" hidden></main>
-
+  <!-- Free Resources -->
+  <main id="resources" hidden>
+  <section class="hero">
+    <h1>Free resources, one sign-in away.</h1>
+    <p>Notes, summaries and checklists for CA students. Sign in with Google to download.</p>
+  </section>
+  <div class="filters-bar"><div class="authbar" id="authbar"></div></div>
+  <div class="sheet res intro">
+    <div class="entry head" aria-hidden="true">
+      <span class="c-date">Added</span><span class="c-title">Resource</span>
+      <span class="c-topic">Category</span><span class="c-read res-act">Download</span>
+    </div>
+    <div id="rrows"><div class="empty">Loading resources…</div></div>
+  </div>
+  <div class="res-msg" id="rmsg" role="status"></div>
+</main>
   <footer>
     <span>© 2026 CA Avishi Gupta</span>
     <span>Views are personal. Articles are general information, not tax or legal advice.</span>
@@ -332,6 +357,8 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
    *  See DEPLOYMENT.md for how to get this URL.
    * ========================================================= */
   var CMS_API_URL = "https://script.google.com/macros/s/AKfycbyohQG_nlyyfT3jAaJPEV2tshb_ti4KLwFu4SkqCMXeBZP9NrKbGhj7Qc2guWdCczOl/exec";
+  var RES_API_URL = "PASTE_RESOURCES_WEB_APP_URL_ENDING_IN_/exec";
+  var GOOGLE_CLIENT_ID = "PASTE_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com";
 
   var CATS = {
     sm: { name: "Strategic Management", glyph: "◆" },
@@ -1583,7 +1610,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
   }
   function $(id) { return document.getElementById(id); }
   var filter = 'all', query = '';
-  var home = $('home'), reader = $('reader'), bar = $('progress');
+  var home = $('home'), reader = $('reader'), resPage = $('resources'), bar = $('progress');
 
   function entryHTML(p) {
     var c = CATS[p.cat];
@@ -1634,14 +1661,14 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
         '<div class="prose">' + p.body + '</div>' +
       '</article>' +
       '<section class="more"><h2>Keep reading</h2><div class="sheet">' + related.map(entryHTML).join('') + '</div></section>';
-    home.hidden = true; reader.hidden = false;
+    home.hidden = true; resPage.hidden = true; reader.hidden = false;;
     document.title = p.title + ' | CA Avishi Gupta';
     window.scrollTo(0, 0);
     updateProgress();
   }
 
   function showHome(target) {
-    reader.hidden = true; home.hidden = false;
+    reader.hidden = true; resPage.hidden = true; home.hidden = false;
     document.title = 'CA Avishi Gupta | Strategy, Tax and Finance';
     updateProgress();
     var el = (target === 'about' || target === 'topics') ? $(target) : null;
@@ -1650,6 +1677,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
 
   function route() {
     var parts = (location.hash || '#/').replace(/^#\/?/, '').split('/');
+    if (parts[0] === 'resources') { showResources(); return; }
     if (parts[0] === 'post') {
       var p = POSTS.filter(function (x) { return x.id === parts[1]; })[0];
       if (p) { showPost(p); return; }
@@ -1712,7 +1740,88 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
       })
       .catch(function (err) { console.error('CMS load failed:', err); });
   }
-
+  /* ---------- Free Resources (login-gated downloads) ---------- */
+  var resources = [], idToken = null, user = null;
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function msg(t) { $('rmsg').textContent = t || ''; }
+ 
+  function showResources() {
+    home.hidden = true; reader.hidden = true; resPage.hidden = false;
+    document.title = 'Free Resources | CA Avishi Gupta';
+    window.scrollTo(0, 0); updateProgress();
+    if (!resources.length) loadResources();
+    initGoogle();
+  }
+ 
+  function loadResources() {
+    if (!RES_API_URL || RES_API_URL.indexOf('PASTE_') === 0) return;
+    fetch(RES_API_URL).then(function (r) { return r.json(); }).then(function (d) {
+      resources = d.resources || []; renderResources();
+    }).catch(function () { $('rrows').innerHTML = '<div class="empty">Could not load resources. Please refresh.</div>'; });
+  }
+ 
+  function renderResources() {
+    $('rrows').innerHTML = resources.length ? resources.map(function (r) {
+      return '<div class="entry"><span class="c-date">' + (r.date ? fmt(r.date) : '') + '</span>' +
+        '<span class="c-title"><span class="t">' + esc(r.title) + '</span><span class="ex">' + esc(r.desc) + '</span></span>' +
+        '<span class="c-topic">' + esc(r.cat) + '</span>' +
+        '<span class="c-read res-act"><button type="button" class="dl" data-id="' + esc(r.id) + '">' +
+        (user ? 'Download' : 'Sign in to download') + '</button></span></div>';
+    }).join('') : '<div class="empty">No resources yet. Check back soon.</div>';
+  }
+ 
+  function initGoogle() {
+    if (!window.google || !google.accounts) { setTimeout(initGoogle, 300); return; }
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onCred });
+    renderAuth();
+  }
+ 
+  function onCred(resp) {
+    idToken = resp.credential;
+    try {
+      var p = JSON.parse(decodeURIComponent(escape(atob(idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))));
+      user = { email: p.email, name: p.name };
+    } catch (e) { user = { email: '' }; }
+    msg(''); renderAuth(); renderResources();
+  }
+ 
+  function renderAuth() {
+    var el = $('authbar');
+    if (user) {
+      el.innerHTML = '<span>Signed in as ' + esc(user.email) + '</span><button type="button" id="signout">Sign out</button>';
+      $('signout').onclick = function () { user = null; idToken = null; google.accounts.id.disableAutoSelect(); renderAuth(); renderResources(); };
+    } else {
+      el.innerHTML = '<span>Sign in to unlock downloads</span><span id="gbtn"></span>';
+      google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'medium', text: 'signin_with' });
+    }
+  }
+ 
+  function b64Blob(b64, mime) {
+    var bin = atob(b64), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime || 'application/octet-stream' });
+  }
+ 
+  $('rrows').addEventListener('click', function (e) {
+    var b = e.target.closest('.dl'); if (!b) return;
+    if (!user) { $('authbar').scrollIntoView({ block: 'center' }); msg('Please sign in with Google first.'); return; }
+    b.disabled = true; msg('Preparing your download…');
+    fetch(RES_API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: idToken, id: b.getAttribute('data-id') }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        b.disabled = false;
+        if (!d.ok) {
+          if (d.error === 'auth') { user = null; idToken = null; renderAuth(); renderResources(); msg('Your session expired. Please sign in again.'); }
+          else msg(d.error === 'too_large' ? 'This file is too large to download here.' : 'Download failed. Please try again.');
+          return;
+        }
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(b64Blob(d.data, d.mime)); a.download = d.name;
+        document.body.appendChild(a); a.click(); a.remove(); msg('');
+      })
+      .catch(function () { b.disabled = false; msg('Download failed. Please try again.'); });
+  });
   renderFilters();
   renderJournal();
   route();
