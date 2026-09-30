@@ -1812,7 +1812,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
       .then(function (d) {
         b.disabled = false;
         if (!d.ok) {
-          if (d.error === 'auth') { user = null; idToken = null; renderAuth(); renderResources(); msg('Your session expired. Please sign in again.'); }
+          if (d.error === 'auth') { user = null; idToken = null; renderAuth(); renderResources(); msg('Your session expired. Please sign in again.' + (d.why ? ' [' + d.why + ']' : '')); }
           else msg(d.error === 'too_large' ? 'This file is too large to download here.' : 'Download failed. Please try again.');
           return;
         }
