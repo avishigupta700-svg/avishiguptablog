@@ -258,6 +258,8 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
 .c-read.res-act { text-align: right; }
 .res-msg { padding: 1rem 1.75rem; color: var(--red); font-size: .95rem; }
 @media (max-width: 760px) { .sheet.res .entry { display: flex; } }
+#rfilters { display: flex; flex-wrap: wrap; gap: 0 1.6rem; }
+#authbar { justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -332,7 +334,14 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     <h1>Free resources, one sign-in away.</h1>
     <p>Notes, summaries and checklists for CA students. Sign in with Google to download.</p>
   </section>
-  <div class="filters-bar"><div class="authbar" id="authbar"></div></div>
+  <div class="authbar" id="authbar"></div>
+  <div class="filters-bar">
+    <div id="rfilters"></div>
+    <label class="search">
+      <span style="position:absolute;left:-9999px">Search resources</span>
+      <input id="rq" type="search" placeholder="Search resources" autocomplete="off">
+    </label>
+  </div>
   <div class="sheet res intro">
     <div class="entry head" aria-hidden="true">
       <span class="c-date">Added</span><span class="c-title">Resource</span>
@@ -1760,15 +1769,50 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     }).catch(function () { $('rrows').innerHTML = '<div class="empty">Could not load resources. Please refresh.</div>'; });
   }
  
-  function renderResources() {
-    $('rrows').innerHTML = resources.length ? resources.map(function (r) {
-      return '<div class="entry"><span class="c-date">' + (r.date ? fmt(r.date) : '') + '</span>' +
-        '<span class="c-title"><span class="t">' + esc(r.title) + '</span><span class="ex">' + esc(r.desc) + '</span></span>' +
-        '<span class="c-topic">' + esc(r.cat) + '</span>' +
-        '<span class="c-read res-act"><button type="button" class="dl" data-id="' + esc(r.id) + '">' +
-        (user ? 'Download' : 'Sign in to download') + '</button></span></div>';
-    }).join('') : '<div class="empty">No resources yet. Check back soon.</div>';
+  var rFilter = 'all', rQuery = '', rCats = [];
+ 
+  function catOf(r) { return (r.cat || 'General').trim() || 'General'; }
+ 
+  function rowHTML(r) {
+    return '<div class="entry"><span class="c-date">' + (r.date ? fmt(r.date) : '') + '</span>' +
+      '<span class="c-title"><span class="t">' + esc(r.title) + '</span><span class="ex">' + esc(r.desc) + '</span></span>' +
+      '<span class="c-topic">' + esc(catOf(r)) + '</span>' +
+      '<span class="c-read res-act"><button type="button" class="dl" data-id="' + esc(r.id) + '">' +
+      (user ? 'Download' : 'Sign in to download') + '</button></span></div>';
   }
+ 
+  function renderResources() {
+    rCats = [];
+    resources.forEach(function (r) { var c = catOf(r); if (rCats.indexOf(c) < 0) rCats.push(c); });
+    rCats.sort();
+    if (rFilter !== 'all' && rCats.indexOf(rFilter) < 0) rFilter = 'all';
+ 
+    var tabs = [{ k: 'all', name: 'All', n: resources.length }].concat(rCats.map(function (c, i) {
+      return { k: String(i), name: c, n: resources.filter(function (r) { return catOf(r) === c; }).length };
+    }));
+    $('rfilters').innerHTML = tabs.map(function (t) {
+      var on = (t.k === 'all' ? rFilter === 'all' : rCats[Number(t.k)] === rFilter);
+      return '<button type="button" class="f' + (on ? ' on' : '') + '" data-k="' + t.k + '" aria-pressed="' + on + '">' +
+        esc(t.name) + '<sup>' + t.n + '</sup></button>';
+    }).join('');
+ 
+    var q = rQuery.trim().toLowerCase();
+    var list = resources.filter(function (r) {
+      var hay = (r.title + ' ' + r.desc + ' ' + catOf(r)).toLowerCase();
+      return (rFilter === 'all' || catOf(r) === rFilter) && (!q || hay.indexOf(q) !== -1);
+    });
+    $('rrows').innerHTML = list.length ? list.map(rowHTML).join('')
+      : '<div class="empty">' + (resources.length ? 'No resources match. Try a different word or category.' : 'No resources yet. Check back soon.') + '</div>';
+  }
+ 
+  $('rfilters').addEventListener('click', function (e) {
+    var b = e.target.closest('.f'); if (!b) return;
+    var k = b.getAttribute('data-k');
+    rFilter = (k === 'all') ? 'all' : rCats[Number(k)];
+    renderResources();
+  });
+  $('rq').addEventListener('input', function (e) { rQuery = e.target.value; renderResources(); });
+ 
  
   function initGoogle() {
     if (!window.google || !google.accounts) { setTimeout(initGoogle, 300); return; }
