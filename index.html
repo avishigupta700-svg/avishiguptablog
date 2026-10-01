@@ -250,7 +250,7 @@ try { var t = localStorage.getItem('theme'); if (t) document.documentElement.set
     .prose blockquote { font-size: 1.2rem; padding-left: 1.1rem; }
     .dek { font-size: 1.1rem; }
   }
-.sheet.res .entry { grid-template-columns: var(--datecol) minmax(0, 1fr) 11rem 11.5rem; }
+.sheet.res .entry { grid-template-columns: var(--datecol) minmax(0, 1fr) 11rem 15rem; }
 .authbar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; padding: .8rem 0; margin-left: auto; font-size: .95rem; color: var(--muted); }
 .authbar button, .dl { font: inherit; font-size: .9rem; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 3px; padding: .4rem .9rem; cursor: pointer; transition: background .15s, color .15s; }
 .authbar button:hover, .dl:hover { background: var(--ink); color: var(--paper); }
@@ -358,7 +358,7 @@ Last updated: September 2026</p>
   <div class="sheet res intro">
     <div class="entry head" aria-hidden="true">
       <span class="c-date">Added</span><span class="c-title">Resource</span>
-      <span class="c-topic">Category</span><span class="c-read res-act">Download</span>
+      <span class="c-topic">Category</span><span class="c-read res-act">Preview / Download</span>
     </div>
     <div id="rrows"><div class="empty">No separate login required for individual downloads. Loading resources…</div></div>
   </div>
@@ -1787,12 +1787,14 @@ Last updated: September 2026</p>
   function catOf(r) { return (r.cat || 'General').trim() || 'General'; }
  
   function rowHTML(r) {
-    return '<div class="entry"><span class="c-date">' + (r.date ? fmt(r.date) : '') + '</span>' +
-      '<span class="c-title"><span class="t">' + esc(r.title) + '</span><span class="ex">' + esc(r.desc) + '</span></span>' +
-      '<span class="c-topic">' + esc(catOf(r)) + '</span>' +
-      '<span class="c-read res-act"><button type="button" class="dl" data-id="' + esc(r.id) + '">' +
-      (user ? 'Download' : 'Sign in to download') + '</button></span></div>';
-  }
+  return '<div class="entry"><span class="c-date">' + (r.date ? fmt(r.date) : '') + '</span>' +
+    '<span class="c-title"><span class="t">' + esc(r.title) + '</span><span class="ex">' + esc(r.desc) + '</span></span>' +
+    '<span class="c-topic">' + esc(catOf(r)) + '</span>' +
+    '<span class="c-read res-act">' +
+      '<button type="button" class="dl pv" data-id="' + esc(r.id) + '">Preview</button> ' +
+      '<button type="button" class="dl" data-id="' + esc(r.id) + '">' + (user ? 'Download' : 'Sign in') + '</button>' +
+    '</span></div>';
+}
  
   function renderResources() {
     rCats = [];
@@ -1860,25 +1862,47 @@ Last updated: September 2026</p>
   }
  
   $('rrows').addEventListener('click', function (e) {
-    var b = e.target.closest('.dl'); if (!b) return;
-    if (!user) { $('authbar').scrollIntoView({ block: 'center' }); msg('Please sign in with Google first.'); return; }
-    b.disabled = true; msg('Preparing your download…');
-    fetch(RES_API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ token: idToken, id: b.getAttribute('data-id') }) })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        b.disabled = false;
-        if (!d.ok) {
-          if (d.error === 'auth') { user = null; idToken = null; renderAuth(); renderResources(); msg('Your session expired. Please sign in again.' + (d.why ? ' [' + d.why + ']' : '')); }
-          else msg(d.error === 'too_large' ? 'This file is too large to download here.' : 'Download failed. Please try again.');
-          return;
+  var b = e.target.closest('.dl'); if (!b) return;
+  if (!user) { $('authbar').scrollIntoView({ block: 'center' }); msg('Please sign in with Google first.'); return; }
+
+  var isPreview = b.classList.contains('pv');
+  // Open the tab synchronously inside the click, or popup blockers will stop it
+  var win = isPreview ? window.open('', '_blank') : null;
+  if (win) win.document.write('<p style="font-family:sans-serif;padding:2rem">Opening preview…</p>');
+
+  b.disabled = true;
+  msg(isPreview ? 'Opening preview…' : 'Preparing your download…');
+
+  fetch(RES_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: idToken, id: b.getAttribute('data-id'), action: 'link' })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      b.disabled = false;
+      if (!d.ok) {
+        if (win) win.close();
+        if (d.error === 'auth') {
+          user = null; idToken = null; renderAuth(); renderResources();
+          msg('Your session expired. Please sign in again.');
+        } else if (d.error === 'not_found') {
+          msg('This resource is no longer available.');
+        } else {
+          msg('Something went wrong. Please try again.' + (d.why ? ' [' + d.why + ']' : ''));
         }
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(b64Blob(d.data, d.mime)); a.download = d.name;
-        document.body.appendChild(a); a.click(); a.remove(); msg('');
-      })
-      .catch(function () { b.disabled = false; msg('Download failed. Please try again.'); });
-  });
+        return;
+      }
+      if (isPreview) { win.location.href = d.view; }
+      else { window.location.href = d.download; }
+      msg('');
+    })
+    .catch(function () {
+      b.disabled = false;
+      if (win) win.close();
+      msg('Something went wrong. Please try again.');
+    });
+});
   renderFilters();
   renderJournal();
   route();
